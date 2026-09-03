@@ -1,216 +1,36 @@
 *This project has been created as part of the 42 curriculum by vslyunko.*
 
-# 📞 Call Me Maybe
+<p align="center">
+  <img src="call-me-maybe-banner.png" alt="Call Me Maybe banner" width="100%">
+</p>
 
-Function calling with constrained decoding using a custom finite-state decoder.
+<p align="center">
+  <img src="https://img.shields.io/badge/42-Project-6C3EB8?style=flat" alt="42 Project">
+  <img src="https://img.shields.io/badge/Python-3.10%2B-6C3EB8?style=flat&logo=python&logoColor=white" alt="Python 3.10+">
+  <img src="https://img.shields.io/badge/LLM-Qwen3--0.6B-6C3EB8?style=flat" alt="Qwen3-0.6B">
+  <img src="https://img.shields.io/badge/Decoding-Constrained-6C3EB8?style=flat" alt="Constrained Decoding">
+  <img src="https://img.shields.io/badge/Output-Valid_JSON-6C3EB8?style=flat" alt="Valid JSON">
+</p>
 
-## 🛠 Tech Stack
+<p align="center">
+Natural language → reliable function calls
+</p>
 
-* Python 3.10+
-* NumPy
-* Pydantic
-* uv
-* pytest
-* Qwen3-0.6B (llm_sdk)
+## DESCRIPTION
 
+**Call Me Maybe** is a function-calling system powered by a small language model.
 
-## 📖 Description
+Instead of relying on the LLM to freely generate structured output, the program constrains the generation process **token by token** so that every result follows valid JSON syntax and the expected function schema.
 
-This project implements a function-calling system powered by a small Language Model.
+Given a prompt such as:
 
-Instead of generating free-form text, the model produces structured JSON describing:
-
-* which function should be called;
-* which parameters should be passed;
-* the correct type for every parameter.
-
-To guarantee valid output, the generation process is constrained token by token using a custom finite-state decoder.
-
-## ✨ Features
-
-* Constrained decoding
-* 100% valid JSON generation
-* Schema-aware parameter validation
-* Support for:
-    * string
-    * integer
-    * number
-    * boolean
-* Graceful error handling
-* Full type hints
-* Pydantic validation
-* Unit tests with pytest
-
-## 📂 Project Structure
-
-src/
-├── decoder.py
-├── generator.py
-├── parser.py
-├── models.py
-├── utils.py
-└── main.py
-tests/
-data/
-├── input/
-└── output/
-
-## 🚀 Instructions
-
-Install dependencies
-
-make install
-
-Run
-
-make run
-
-or
-
-uv run python -m src
-
-Run with custom files
-
-uv run python -m src \
-    --functions_definition path/to/functions.json \
-    --input path/to/prompts.json \
-    --output path/to/results.json
-    --visualize True/False
-
-Default paths
-
-Argument	Default value
---functions_definition	data/input/functions_definition.json
---input	data/input/function_calling_tests.json
---output	data/output/function_calling_results.json
---visualize False
-
-## ⚙️ Algorithm Explanation
-
-The decoder generates the output one token at a time while ensuring that every generated token keeps the JSON valid.
-
-Prompt
-   │
-   ▼
-Build Prompt
-   │
-   ▼
-Tokenize
-   │
-   ▼
-State Machine
-   │
-   ▼
-Compute Allowed Tokens
-   │
-   ▼
-Mask Invalid Logits
-   │
-   ▼
-Greedy Selection
-   │
-   ▼
-Append Token
-   │
-   ▼
-Advance State
-   │
-   └───────────────┐
-                   │
-                Until DONE
-
-Generation loop
-
-For every generated token:
-
-1. Encode the prompt.
-2. Determine the current decoder state.
-3. Compute the set of valid next tokens.
-4. If only one token is possible, emit it directly.
-5. Otherwise:
-    * obtain the model logits;
-    * mask every invalid token;
-    * select the highest remaining logit.
-6. Append the selected token.
-7. Update the decoder state.
-8. Repeat until the JSON object is complete.
-
-The decoder never allows tokens that would break either the JSON syntax or the expected schema.
-
-## 💡 Design Decisions
-
-Decision	Reason
-Finite-state machine	Keeps the JSON structure under control during generation
-Greedy decoding	Fast and deterministic
-NumPy for logit masking	Efficient filtering of valid tokens
-Token cache	Avoid repeated tokenization of identical strings
-Skip logits when only one token is valid	Reduces unnecessary LLM computations
-Pydantic models	Automatic validation and cleaner data structures
-
-Performance was prioritised over prompt complexity. Instead of relying on a long prompt, the implementation uses constrained decoding to guarantee correct output.
-
-## 📈 Performance Analysis
-
-Accuracy
-
-* Function selection is performed by the LLM.
-* JSON validity is guaranteed by constrained decoding.
-* Parameter types always follow the function schema.
-
-Speed
-
-Several optimisations were introduced:
-
-* logits are only computed when multiple token choices exist;
-* repeated tokenization is avoided through caching;
-* NumPy is used for efficient masking operations.
-
-These optimisations significantly reduce the amount of work performed during generation.
-
-Reliability
-
-Every generated token satisfies both:
-
-* valid JSON syntax;
-* the expected function schema.
-
-As a result, every generated output can always be parsed successfully.
-
-## 🚧 Challenges Faced
-
-Understanding constrained decoding
-
-The biggest challenge was understanding how constrained decoding works internally. Coming from a C background, concepts such as logits, tokenization and token-level generation were completely new.
-
-Detecting the end of strings
-
-The most difficult implementation detail was determining when a generated string was actually complete while correctly handling escaped characters.
-
-Writing Python instead of C
-
-Several parts of the implementation were redesigned to follow a more Pythonic approach instead of my initial C-style solutions.
-
-## 🧪 Testing Strategy
-
-The implementation was validated using:
-
-* unit tests with pytest;
-* malformed JSON files;
-* missing input files;
-* invalid schemas;
-* prompts containing different parameter types;
-* manual inspection of generated outputs.
-
-Every generated JSON object is validated again using Pydantic before being written to the output file.
-
-## ▶️ Example Usage
-
-Input
-
+```text
 What is the sum of 2 and 3?
+```
 
-Output
+the program produces a structured function call:
 
+```json
 {
     "prompt": "What is the sum of 2 and 3?",
     "name": "fn_add_numbers",
@@ -219,15 +39,166 @@ Output
         "b": 3
     }
 }
+```
 
-Another example
+The LLM decides **which function to call and which values to use**, while a custom finite-state decoder controls which tokens are valid at every generation step.
 
-Input
+---
+## INSTRUCTIONS
 
+### Installation
+
+Install the project dependencies with:
+
+```bash
+make install
+```
+
+### Running the program
+
+Run with the default input files:
+
+```bash
+make run
+```
+
+or directly with:
+
+```bash
+uv run python -m src
+```
+
+### Custom input files
+
+```bash
+uv run python -m src \
+    --functions_definition path/to/functions.json \
+    --input path/to/prompts.json \
+    --output path/to/results.json
+```
+
+| Argument | Default |
+| --- | --- |
+| `--functions_definition` | `data/input/functions_definition.json` |
+| `--input` | `data/input/function_calling_tests.json` |
+| `--output` | `data/output/function_calling_results.json` |
+| `--visualize` | `False` |
+
+### Other commands
+
+```bash
+make debug        # Run with Python's debugger
+make clean        # Remove Python and tool caches
+make lint         # Run flake8 and mypy
+make test         # Run test
+```
+
+---
+
+## HOW IT WORKS
+
+Call Me Maybe uses a custom **finite-state decoder** to constrain the LLM output during generation.
+
+For each token:
+1. The LLM produces logits for the possible next tokens.
+2. The decoder checks its current state.
+3. It determines which tokens would keep the JSON valid and schema-compliant.
+4. Invalid logits are masked.
+5. The highest-scoring valid token is selected.
+6. The decoder advances to the next state.
+7. The process repeats until the JSON object is complete.
+
+```text
+Prompt
+  ↓
+LLM logits
+  ↓
+Decoder state
+  ↓
+Allowed tokens
+  ↓
+Mask invalid logits
+  ↓
+Select next token
+  ↓
+Repeat until DONE
+```
+
+The decoder does not replace the LLM: the model still chooses between valid possibilities. The decoder only prevents outputs that would break the required structure.
+
+### Design choices
+
+- **Finite-state machine** — makes every generation stage explicit and predictable.
+- **Greedy decoding** — keeps generation deterministic.
+- **Token caching** — avoids repeated tokenization of identical strings.
+- **Skip logits when only one token is valid** — reduces unnecessary LLM computations.
+- **NumPy masking** — efficiently filters invalid token logits.
+- **Pydantic validation** — validates input structures and generated results.
+
+The decoder supports `string`, `integer`, `number` and `boolean` parameters according to each function definition.
+
+### Performance & reliability
+
+Constrained decoding guarantees **structurally valid, schema-compliant JSON**.
+
+Function selection and argument extraction still depend on the LLM, while the decoder guarantees that the final structure can be parsed correctly.
+
+Performance is improved by caching tokenization, skipping unnecessary model calls and using NumPy for logit masking.
+
+---
+
+## CHALLENGES
+
+The main challenges were:
+
+- understanding token-level generation, logits and vocabulary IDs;
+- detecting when generated strings were complete while correctly handling escaped characters;
+- adapting some initial C-style solutions into a more Pythonic structure.
+
+These problems were approached by breaking the decoder into explicit states, testing transitions independently and progressively simplifying the implementation.
+
+---
+
+## TESTING
+
+The implementation was validated using `pytest` and manual tests covering:
+
+- malformed JSON files;
+- missing input files;
+- invalid function schemas;
+- string, integer, number and boolean parameters;
+- edge cases in generated strings;
+- final output validation with Pydantic.
+
+Generated results are validated before being written to the output file.
+
+---
+
+## EXAMPLE
+
+Given the function definition:
+
+```json
+{
+    "name": "fn_greet",
+    "description": "Generate a greeting message for a person by name.",
+    "parameters": {
+        "name": {
+            "type": "string"
+        }
+    }
+}
+```
+
+and the prompt:
+
+```text
 Greet John
+```
 
-Output
+Call Me Maybe generates:
 
+```json
 {
     "prompt": "Greet John",
     "name": "fn_greet",
@@ -235,48 +206,40 @@ Output
         "name": "John"
     }
 }
+```
 
-## 📚 Resources
+The LLM identifies the appropriate function and parameter value, while the decoder ensures that the generated structure follows the function schema.
 
-Constrained Decoding & LLMs
+---
 
-* Controlling your LLM: Deep Dive into Constrained Generation
-    https://medium.com/@docherty/controlling-your-llm-deep-dive-into-constrained-generation-1e561c736a20
-* LLM Breakdown: Logits and Next-Token Prediction
-    https://mikexcohen.substack.com/p/llm-breakdown-26-logits-and-next
-* Constrained Decoding: Grammar-Guided Generation for Structured Output
-    https://mbrenndoerfer.com/writing/constrained-decoding-structured-llm-output
-* Function Calling Internals: Grammars and Constrained Decoding
-    https://www.salmanq.com/blog/llm-constrained-sampling/
+## RESOURCES
 
-Python
+The following resources were consulted during the development of the project:
 
-* pytest
-    https://www.youtube.com/watch?v=mzlH8lp4ISA
-* argparse
-    https://www.youtube.com/watch?v=88pl8TuuKz0
-* argparse (additional tutorial)
-    https://www.youtube.com/watch?v=cdblJqEUDNo
-* JSON module
-    https://www.youtube.com/watch?v=4rmBOxn0PdI
+### LLMs & constrained decoding
 
-Additional documentation consulted:
+- [Controlling your LLM: Deep Dive into Constrained Generation](https://medium.com/@docherty/controlling-your-llm-deep-dive-into-constrained-generation-1e561c736a20)
+- [LLM Breakdown: Logits and Next-Token Prediction](https://mikexcohen.substack.com/p/llm-breakdown-26-logits-and-next)
+- [Constrained Decoding: Grammar-Guided Generation for Structured Output](https://mbrenndoerfer.com/writing/constrained-decoding-structured-llm-output)
+- [Function Calling Internals: Grammars and Constrained Decoding](https://www.salmanq.com/blog/llm-constrained-sampling/)
 
-* Pydantic
-* list comprehensions
-* error handling
-* uv package manager
+### Python
 
-## 🤖 AI Usage
+- [pytest tutorial](https://www.youtube.com/watch?v=mzlH8lp4ISA)
+- [argparse tutorial](https://www.youtube.com/watch?v=88pl8TuuKz0)
+- [JSON module](https://www.youtube.com/watch?v=4rmBOxn0PdI)
 
-AI was used as a learning assistant, not as a code generator.
+Additional documentation was consulted for **Pydantic, error handling, list comprehensions and uv**.
 
-It helped with:
+### AI usage
 
-* understanding concepts that were difficult to find in documentation;
-* improving function, variable and class names;
-* suggesting more Pythonic alternatives to C-style code;
-* identifying repeated code that could be simplified;
-* discussing implementation ideas when I was blocked.
+AI was used as a learning and development support tool, mainly to:
 
-Every suggestion was reviewed, understood and adapted before being included in the final implementation.
+- understand unfamiliar LLM concepts such as logits, tokenization and constrained decoding;
+- discuss implementation approaches when blocked;
+- improve naming and code structure;
+- identify repeated logic;
+- explore more Pythonic alternatives to some initial C-style solutions;
+- improve project documentation.
+
+All suggestions were reviewed, understood and adapted manually before being incorporated into the project.
