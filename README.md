@@ -1,7 +1,7 @@
 *This project has been created as part of the 42 curriculum by vslyunko.*
 
 <p align="center">
-  <img src="call-me-maybe-banner.png" alt="Call Me Maybe banner" width="100%">
+  <img src="call-me-maybe-banner.jpg" alt="Call Me Maybe banner" width="100%">
 </p>
 
 <p align="center">
