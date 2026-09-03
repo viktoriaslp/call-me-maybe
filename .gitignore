@@ -1,0 +1,28 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+maze_env/
+.env/
+.venv/
+.envrc/
+
+# Mypy
+.mypy_cache/
+
+# Pytest
+.pytest_cache/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# ===== data/output =====
+data/output/
